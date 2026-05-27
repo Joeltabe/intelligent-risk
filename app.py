@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Any, Dict
 
 from kidney_predictor import load_predictor, KidneyRiskPredictor
@@ -19,7 +19,9 @@ class PatientRequest(BaseModel):
 
 class FeedbackRequest(BaseModel):
     patient_data: Dict[str, Any]
-    actual_label: str
+    actual_label: str = Field(..., description="True outcome label: ckd|notckd")
+    predicted_label: str | None = Field(default=None, description="Optional frontend predicted label")
+    case_id: str | None = Field(default=None, description="Optional client case identifier")
 
 
 @app.get('/')
@@ -28,7 +30,8 @@ def read_root() -> Dict[str, Any]:
         'status': 'ok',
         'model_version': predictor.version,
         'training_timestamp': predictor.training_timestamp,
-        'feature_count': len(predictor.feature_names)
+        'feature_count': len(predictor.feature_names),
+        'model_used': predictor.get_model_used()
     }
 
 
@@ -48,12 +51,12 @@ def predict_risk(request: PatientRequest) -> Dict[str, Any]:
 @app.post('/feedback')
 def ingest_feedback(request: FeedbackRequest) -> Dict[str, Any]:
     try:
-        predictor.learn_from_feedback(request.patient_data, request.actual_label)
-        return {
-            'status': 'accepted',
-            'feedback_records': len(predictor.feedback_buffer),
-            'model_version': predictor.version
-        }
+        return predictor.learn_from_feedback(
+            request.patient_data,
+            request.actual_label,
+            request.predicted_label,
+            request.case_id
+        )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -65,5 +68,7 @@ def metadata() -> Dict[str, Any]:
         'training_timestamp': predictor.training_timestamp,
         'feature_names': predictor.feature_names,
         'numeric_features': predictor.numeric_features,
-        'categorical_features': predictor.categorical_features
+        'categorical_features': predictor.categorical_features,
+        'model_used': predictor.get_model_used(),
+        'retrain_threshold': predictor.retrain_threshold
     }
