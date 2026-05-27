@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kidney Disease Risk Predictor</title>
+  <link rel="stylesheet" href="/ui/styles.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="header-icon">🫘</div>
+      <h1>Kidney Risk Predictor</h1>
+    </div>
+    <div class="header-right">
+      <span><span id="status-dot" class="status-dot offline"></span><span id="status-text">Offline</span></span>
+      <span id="header-version">—</span>
+      <button class="btn btn-secondary" id="load-sample-btn" style="font-size:.8rem;padding:.35rem .75rem">Load Sample</button>
+      <button class="btn btn-secondary" id="reset-btn" style="font-size:.8rem;padding:.35rem .75rem">Reset</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="main-grid">
+    <!-- Left: Form -->
+    <div class="card">
+      <div class="card-header">
+        <h2>📋 Patient Data</h2>
+      </div>
+      <div class="card-body">
+        <form id="predict-form" autocomplete="off">
+          <!-- Demographics & Vitals -->
+          <div class="form-section">
+            <div class="form-section-title">Demographics &amp; Vitals</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="age">Age (years)</label>
+                <input type="number" id="age" name="age" step="0.1" min="0" max="120" placeholder="e.g. 65">
+              </div>
+              <div class="form-group">
+                <label for="bp">Blood Pressure (mmHg)</label>
+                <input type="number" id="bp" name="bp" step="0.1" min="0" placeholder="e.g. 140">
+              </div>
+            </div>
+          </div>
+
+          <!-- Urine & Lab Markers -->
+          <div class="form-section">
+            <div class="form-section-title">Urine &amp; Lab Markers</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sg">Specific Gravity</label>
+                <input type="number" id="sg" name="sg" step="0.001" min="1" max="1.05" placeholder="e.g. 1.010">
+              </div>
+              <div class="form-group">
+                <label for="al">Albumin</label>
+                <input type="number" id="al" name="al" step="0.1" min="0" max="5" placeholder="e.g. 3">
+              </div>
+              <div class="form-group">
+                <label for="su">Sugar</label>
+                <input type="number" id="su" name="su" step="0.1" min="0" max="5" placeholder="e.g. 2">
+              </div>
+              <div class="form-group">
+                <label for="bgr">Blood Glucose Random</label>
+                <input type="number" id="bgr" name="bgr" step="0.1" min="0" placeholder="e.g. 180">
+              </div>
+              <div class="form-group">
+                <label for="bu">Blood Urea</label>
+                <input type="number" id="bu" name="bu" step="0.1" min="0" placeholder="e.g. 58">
+              </div>
+              <div class="form-group">
+                <label for="sc">Serum Creatinine</label>
+                <input type="number" id="sc" name="sc" step="0.1" min="0" placeholder="e.g. 3.5">
+              </div>
+              <div class="form-group">
+                <label for="sod">Serum Sodium</label>
+                <input type="number" id="sod" name="sod" step="0.1" min="0" placeholder="e.g. 132">
+              </div>
+              <div class="form-group">
+                <label for="pot">Serum Potassium</label>
+                <input type="number" id="pot" name="pot" step="0.1" min="0" placeholder="e.g. 5.2">
+              </div>
+              <div class="form-group">
+                <label for="hemo">Hemoglobin</label>
+                <input type="number" id="hemo" name="hemo" step="0.1" min="0" placeholder="e.g. 8.5">
+              </div>
+              <div class="form-group">
+                <label for="pcv">Packed Cell Volume</label>
+                <input type="number" id="pcv" name="pcv" step="0.1" min="0" placeholder="e.g. 26">
+              </div>
+              <div class="form-group">
+                <label for="wc">White Blood Cell Count</label>
+                <input type="number" id="wc" name="wc" step="0.1" min="0" placeholder="e.g. 11000">
+              </div>
+              <div class="form-group">
+                <label for="rc">Red Blood Cell Count</label>
+                <input type="number" id="rc" name="rc" step="0.1" min="0" placeholder="e.g. 3.1">
+              </div>
+            </div>
+          </div>
+
+          <!-- Clinical Indicators -->
+          <div class="form-section">
+            <div class="form-section-title">Clinical Indicators</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="rbc">Red Blood Cells</label>
+                <select id="rbc" name="rbc">
+                  <option value="">— Not specified —</option>
+                  <option value="normal">Normal</option>
+                  <option value="abnormal">Abnormal</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="pc">Pus Cells</label>
+                <select id="pc" name="pc">
+                  <option value="">— Not specified —</option>
+                  <option value="normal">Normal</option>
+                  <option value="abnormal">Abnormal</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="pcc">Pus Cell Clumps</label>
+                <select id="pcc" name="pcc">
+                  <option value="">— Not specified —</option>
+                  <option value="notpresent">Not Present</option>
+                  <option value="present">Present</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="ba">Bacteria</label>
+                <select id="ba" name="ba">
+                  <option value="">— Not specified —</option>
+                  <option value="notpresent">Not Present</option>
+                  <option value="present">Present</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="htn">Hypertension</label>
+                <select id="htn" name="htn">
+                  <option value="">— Not specified —</option>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="dm">Diabetes Mellitus</label>
+                <select id="dm" name="dm">
+                  <option value="">— Not specified —</option>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cad">Coronary Artery Disease</label>
+                <select id="cad" name="cad">
+                  <option value="">— Not specified —</option>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="appet">Appetite</label>
+                <select id="appet" name="appet">
+                  <option value="">— Not specified —</option>
+                  <option value="good">Good</option>
+                  <option value="poor">Poor</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="pe">Pedal Edema</label>
+                <select id="pe" name="pe">
+                  <option value="">— Not specified —</option>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="ane">Anemia</label>
+                <select id="ane" name="ane">
+                  <option value="">— Not specified —</option>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="predict-btn">
+            Predict Risk
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right: Results -->
+    <div class="card" id="results-panel">
+      <div class="card-header">
+        <h2>📊 Assessment Result</h2>
+      </div>
+      <div class="card-body">
+        <div class="risk-gauge">
+          <div class="gauge-container">
+            <div class="gauge-circle">
+              <svg viewBox="0 0 180 180">
+                <circle class="gauge-bg" cx="90" cy="90" r="82"/>
+                <circle class="gauge-fill" id="gauge-fill" cx="90" cy="90" r="82"/>
+              </svg>
+              <div>
+                <div class="gauge-value" id="gauge-value">—</div>
+                <div class="gauge-label">CKD Risk</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:.75rem;flex-wrap:wrap;align-items:center">
+            <span class="risk-tier-badge" id="risk-tier-badge">—</span>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-value" id="confidence-value">—</div>
+            <div class="metric-label">Confidence</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value" id="result-model" style="font-size:.85rem">—</div>
+            <div class="metric-label">Model</div>
+          </div>
+        </div>
+
+        <div style="margin-top:.75rem">
+          <h3 style="font-size:.85rem;font-weight:600;color:var(--gray-700);margin-bottom:.5rem">Clinical Recommendations</h3>
+          <ul class="recommendations" id="recommendations-list">
+            <li style="color:var(--gray-400);border-left-color:var(--gray-300)">Run a prediction to see recommendations.</li>
+          </ul>
+        </div>
+
+        <!-- Feedback -->
+        <div class="feedback-section">
+          <h3>Submit Clinical Feedback</h3>
+          <form id="feedback-form">
+            <div class="form-group">
+              <label for="actual-label">Actual Outcome</label>
+              <select id="actual-label" name="actual-label" required>
+                <option value="">— Select outcome —</option>
+                <option value="notckd">Not CKD</option>
+                <option value="ckd">CKD</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-success btn-full" id="feedback-btn">
+              Submit Feedback
+            </button>
+          </form>
+          <div id="feedback-result"></div>
+        </div>
+
+        <div class="model-info">
+          <span id="footer-version">—</span>
+          <span><a href="/docs" target="_blank" style="color:var(--primary);text-decoration:none">API Docs</a></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="/ui/app.js"></script>
+</body>
+</html>
