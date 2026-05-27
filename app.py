@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Any, Dict
 
@@ -81,3 +82,6 @@ def metadata() -> Dict[str, Any]:
         'model_used': predictor.get_model_used(),
         'retrain_threshold': predictor.retrain_threshold
     }
+
+
+app.mount('/ui', StaticFiles(directory='frontend', html=True), name='frontend')
