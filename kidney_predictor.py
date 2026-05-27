@@ -100,6 +100,12 @@ class KidneyRiskPredictor:
         self.version = '1.0.0'
         self.training_timestamp: Optional[str] = None
 
+    def get_model_used(self) -> str:
+        if self.pipeline is None:
+            return self.model_type
+        classifier = self.pipeline.named_steps.get('classifier')
+        return classifier.__class__.__name__ if classifier is not None else self.model_type
+
     def build_pipeline(self, X: pd.DataFrame) -> None:
         self.numeric_features = X.select_dtypes(include=[np.number]).columns.tolist()
         self.categorical_features = X.select_dtypes(include=['object', 'category']).columns.tolist()
@@ -202,19 +208,50 @@ class KidneyRiskPredictor:
             'recommendations': recommendations,
             'top_risk_drivers': [],
             'model_version': self.version,
+            'model_used': self.get_model_used(),
             'confidence': 'High' if risk_probability > 0.8 or risk_probability < 0.2 else 'Moderate',
             'raw_patient_data': patient_data
         }
 
-    def learn_from_feedback(self, patient_data: Dict[str, Any], actual_label: str) -> None:
-        record = {**patient_data, 'actual_outcome': str(actual_label).strip().lower()}
+    def learn_from_feedback(self, patient_data: Dict[str, Any], actual_label: str, predicted_label: Optional[str] = None, case_id: Optional[str] = None) -> Dict[str, Any]:
+        normalized_outcome = str(actual_label).strip().lower()
+        if normalized_outcome not in {'ckd', 'notckd'}:
+            raise ValueError("actual_label must be either 'ckd' or 'notckd'")
+
+        if predicted_label is None:
+            inference = self.predict(patient_data)
+            predicted_label = 'ckd' if float(inference['risk_probability']) >= 0.5 else 'notckd'
+
+        record = {
+            **patient_data,
+            'actual_outcome': normalized_outcome,
+            'predicted_label': str(predicted_label).strip().lower(),
+            'case_id': case_id or ''
+        }
         self.feedback_buffer = pd.concat([self.feedback_buffer, pd.DataFrame([record])], ignore_index=True)
         logger.info('Stored clinician feedback (%d records total).', len(self.feedback_buffer))
+
+        model_retrained = False
+        previous_version = self.version
         if len(self.feedback_buffer) >= self.retrain_threshold:
             self._self_retrain()
+            model_retrained = self.version != previous_version
+
+        outcome_match = record['predicted_label'] == normalized_outcome
+        return {
+            'status': 'accepted',
+            'case_id': case_id,
+            'actual_label': normalized_outcome,
+            'predicted_label': record['predicted_label'],
+            'prediction_match': outcome_match,
+            'feedback_records': len(self.feedback_buffer),
+            'model_retrained': model_retrained,
+            'model_version': self.version,
+            'model_used': self.get_model_used()
+        }
 
     def _self_retrain(self) -> None:
-        X_new = self.feedback_buffer.drop(columns=['actual_outcome'])
+        X_new = self.feedback_buffer.drop(columns=['actual_outcome', 'predicted_label', 'case_id'], errors='ignore')
         y_new = self.feedback_buffer['actual_outcome']
         self.version = f"{float(self.version) + 0.1:.1f}"
         self.build_pipeline(X_new)
