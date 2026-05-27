@@ -24,14 +24,14 @@ These routes are defined in `app.py` and executed by FastAPI. The prediction log
 
 After deployment, Railway gives you a public domain, such as:
 
-- `https://your-service-name.up.railway.app`
+- `https://web-production-a106d9.up.railway.app`
 
 Use that as your `BASE_URL` in all requests below.
 
 Example:
 
 ```bash
-BASE_URL="https://your-service-name.up.railway.app"
+BASE_URL="https://web-production-a106d9.up.railway.app"
 ```
 
 ---
@@ -122,6 +122,135 @@ Categorical (send as strings):
 - Unknown categorical values are safely encoded with fallback handling.
 
 ---
+
+
+---
+
+## 4.1) Full variable reference (meaning + how frontend should use each field)
+
+This section is for frontend/backend integrators so you can map each variable to a form field, validation rule, and UX hint.
+
+### A) Request body wrapper
+
+- `patient_data` (object): Container for all clinical input variables used by the model.
+  - Frontend use: Build a single object from your form and send as `{ "patient_data": {...} }`.
+
+### B) Input variables used by the model (inside `patient_data`)
+
+#### Demographics & vitals
+
+- `age` (number): Patient age in years.
+  - Typical use: Numeric input.
+  - Why it matters: Kidney risk increases with age.
+
+- `bp` (number): Blood pressure (typically systolic mmHg in this dataset).
+  - Typical use: Numeric input.
+  - Why it matters: Hypertension is strongly associated with kidney damage.
+
+#### Urine/lab numeric markers
+
+- `sg` (number): Urine specific gravity.
+  - Use: Decimal numeric input (e.g., `1.010`).
+  - Meaning: Kidney concentrating ability marker.
+
+- `al` (number): Albumin in urine (proteinuria grade/level).
+  - Use: Numeric input.
+  - Meaning: Higher albumin generally indicates kidney injury.
+
+- `su` (number): Sugar in urine.
+  - Use: Numeric input.
+  - Meaning: Can correlate with diabetes-related kidney risk.
+
+- `bgr` (number): Blood glucose random.
+  - Use: Numeric input.
+  - Meaning: Hyperglycemia contributes to CKD risk.
+
+- `bu` (number): Blood urea.
+  - Use: Numeric input.
+  - Meaning: Elevated values may indicate impaired kidney clearance.
+
+- `sc` (number): Serum creatinine.
+  - Use: Numeric input.
+  - Meaning: Key renal function marker.
+
+- `sod` (number): Serum sodium.
+  - Use: Numeric input.
+  - Meaning: Electrolyte balance marker.
+
+- `pot` (number): Serum potassium.
+  - Use: Numeric input.
+  - Meaning: Kidney dysfunction can alter potassium levels.
+
+- `hemo` (number): Hemoglobin.
+  - Use: Numeric input.
+  - Meaning: CKD can be associated with anemia.
+
+- `pcv` (number): Packed cell volume / hematocrit.
+  - Use: Numeric input.
+  - Meaning: Helps evaluate anemia/hematologic status.
+
+- `wc` (number): White blood cell count.
+  - Use: Numeric input.
+  - Meaning: Infection/inflammation context.
+
+- `rc` (number): Red blood cell count.
+  - Use: Numeric input.
+  - Meaning: Low values can indicate anemia patterns seen in CKD.
+
+#### Categorical clinical indicators
+
+- `rbc` (string): Red blood cells in urine (`normal`/`abnormal`).
+- `pc` (string): Pus cells (`normal`/`abnormal`).
+- `pcc` (string): Pus cell clumps (`present`/`notpresent`).
+- `ba` (string): Bacteria (`present`/`notpresent`).
+- `htn` (string): Hypertension history (`yes`/`no`).
+- `dm` (string): Diabetes mellitus (`yes`/`no`).
+- `cad` (string): Coronary artery disease (`yes`/`no`).
+- `appet` (string): Appetite (`good`/`poor`).
+- `pe` (string): Pedal edema (`yes`/`no`).
+- `ane` (string): Anemia (`yes`/`no`).
+
+Frontend guidance for categorical variables:
+
+- Prefer dropdown/radio controls to avoid spelling errors.
+- Send lowercase canonical values (`yes`, `no`, `present`, `notpresent`, `normal`, `abnormal`, etc.).
+- If unknown, you may omit the field; model preprocessing imputes missing values.
+
+### C) Feedback endpoint additional variables
+
+- `actual_label` (string, required): Ground-truth clinical outcome. Allowed: `ckd` or `notckd`.
+  - Use: Submit once real diagnosis/outcome is known.
+
+- `predicted_label` (string, optional): Label predicted by your app/model at decision time.
+  - Use: Enables direct prediction-vs-outcome matching in API response.
+
+- `case_id` (string, optional): Your frontend/backend case identifier (visit ID, encounter ID, etc.).
+  - Use: Traceability for audit/history screens.
+
+### D) Key response variables from `/predict`
+
+- `risk_probability` (number): Probability of CKD class.
+- `risk_tier` (string): Tier derived from probability (`Low`, `Moderate`, `High`, `Critical`).
+- `recommendations` (array[string]): Clinical next-step guidance text.
+- `model_version` (string): Version of currently loaded model.
+- `model_used` (string): Classifier type currently serving requests (e.g., `RandomForestClassifier`).
+- `confidence` (string): Heuristic confidence bucket from probability.
+- `raw_patient_data` (object): Echo of submitted input.
+
+Frontend UX suggestion:
+
+- Show both `risk_probability` and `risk_tier` together.
+- Render `recommendations` as bullet points.
+- Display `model_version` + `model_used` in a “Model Info” section for transparency.
+
+### E) Key response variables from `/feedback`
+
+- `status`: Feedback acceptance status.
+- `prediction_match` (boolean): Whether `predicted_label` matches `actual_label`.
+- `feedback_records` (number): Current buffered feedback records count.
+- `model_retrained` (boolean): True when retrain threshold is hit and model refreshed.
+- `model_version` / `model_used`: Post-feedback serving model details.
+
 
 ## 5) Call the prediction endpoint
 
@@ -246,7 +375,7 @@ Notes:
 ## JavaScript / TypeScript (frontend or Node backend)
 
 ```ts
-const BASE_URL = "https://your-service-name.up.railway.app";
+const BASE_URL = "https://web-production-a106d9.up.railway.app";
 
 export async function predictKidneyRisk(patientData: Record<string, unknown>) {
   const res = await fetch(`${BASE_URL}/predict`, {
@@ -269,7 +398,7 @@ export async function predictKidneyRisk(patientData: Record<string, unknown>) {
 ```python
 import requests
 
-BASE_URL = "https://your-service-name.up.railway.app"
+BASE_URL = "https://web-production-a106d9.up.railway.app"
 
 def predict_kidney_risk(patient_data: dict) -> dict:
     response = requests.post(
@@ -296,9 +425,9 @@ Use the same REST pattern:
 
 FastAPI auto-generates docs:
 
-- Swagger UI: `https://your-service-name.up.railway.app/docs`
-- ReDoc: `https://your-service-name.up.railway.app/redoc`
-- OpenAPI JSON: `https://your-service-name.up.railway.app/openapi.json`
+- Swagger UI: `https://web-production-a106d9.up.railway.app/docs`
+- ReDoc: `https://web-production-a106d9.up.railway.app/redoc`
+- OpenAPI JSON: `https://web-production-a106d9.up.railway.app/openapi.json`
 
 If your app team needs exact request/response contracts, share the OpenAPI JSON.
 
