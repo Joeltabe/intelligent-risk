@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: kidney-risk-api
+    env: docker
+    plan: starter
+    dockerfilePath: Dockerfile
+    port: 8000
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "8000"
