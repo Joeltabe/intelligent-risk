@@ -4,8 +4,8 @@ services:
     env: docker
     plan: starter
     dockerfilePath: Dockerfile
-    port: 8000
     autoDeploy: true
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PORT
         value: "8000"
