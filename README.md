@@ -254,37 +254,54 @@ Frontend UX suggestion:
 
 ## 5) Call the prediction endpoint
 
+### Linux / macOS / Git Bash
 ```bash
 curl -X POST "$BASE_URL/predict" \
   -H "Content-Type: application/json" \
   -d '{
-    "patient_data": {
-      "age": 65.0,
-      "bp": 140.0,
-      "sg": 1.010,
-      "al": 3.0,
-      "su": 2.0,
-      "rbc": "abnormal",
-      "pc": "abnormal",
-      "pcc": "present",
-      "ba": "notpresent",
-      "bgr": 180.0,
-      "bu": 58.0,
-      "sc": 3.5,
-      "sod": 132.0,
-      "pot": 5.2,
-      "hemo": 8.5,
-      "pcv": 26.0,
-      "wc": 11000.0,
-      "rc": 3.1,
-      "htn": "yes",
-      "dm": "yes",
-      "cad": "yes",
-      "appet": "poor",
-      "pe": "yes",
-      "ane": "yes"
-    }
-  }'
+```
+
+### Windows PowerShell
+PowerShell's `curl` is an alias for `Invoke-WebRequest`. Use `curl.exe` for the real curl:
+
+```powershell
+curl.exe -X POST "$BASE_URL/predict" `
+  -H "Content-Type: application/json" `
+  -d '{\"patient_data\":{\"age\":65,\"bp\":140,\"sg\":1.01,\"al\":3,\"su\":2,\"bgr\":180,\"bu\":58,\"sc\":3.5,\"sod\":132,\"pot\":5.2,\"hemo\":8.5,\"pcv\":26,\"wc\":11000,\"rc\":3.1,\"rbc\":\"abnormal\",\"pc\":\"abnormal\",\"pcc\":\"present\",\"ba\":\"notpresent\",\"htn\":\"yes\",\"dm\":\"yes\",\"cad\":\"yes\",\"appet\":\"poor\",\"pe\":\"yes\",\"ane\":\"yes\"}}'
+```
+
+
+
+### Full JSON payload reference
+```json
+{
+  "patient_data": {
+    "age": 65.0,
+    "bp": 140.0,
+    "sg": 1.010,
+    "al": 3.0,
+    "su": 2.0,
+    "rbc": "abnormal",
+    "pc": "abnormal",
+    "pcc": "present",
+    "ba": "notpresent",
+    "bgr": 180.0,
+    "bu": 58.0,
+    "sc": 3.5,
+    "sod": 132.0,
+    "pot": 5.2,
+    "hemo": 8.5,
+    "pcv": 26.0,
+    "wc": 11000.0,
+    "rc": 3.1,
+    "htn": "yes",
+    "dm": "yes",
+    "cad": "yes",
+    "appet": "poor",
+    "pe": "yes",
+    "ane": "yes"
+  }
+}
 ```
 
 Example response:
